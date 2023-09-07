@@ -23,6 +23,7 @@ if (process.env.NODE_ENV == 'development') {
 } else {
   axios.defaults.baseURL = 'https://vecino.villaallende.gov.ar/WebApiMWF'
 }
+
 axios.defaults.headers.common['Access-Control-Allow-Origin'] =
   window.location.origin
 axios.defaults.headers.common['Access-Control-Allow-Methods'] = '*'

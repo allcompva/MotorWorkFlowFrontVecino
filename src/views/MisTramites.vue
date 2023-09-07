@@ -71,8 +71,7 @@
     </div>
   </div>
 </template>
-<style scoped>
-@import '../assets/css/app.css';
+<style>
 .btn-primary {
   background-color: rgb(15 153 202) !important;
 }

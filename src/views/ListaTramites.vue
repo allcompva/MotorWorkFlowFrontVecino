@@ -83,6 +83,7 @@
     <CModal
       style="margin-top: 150px !important"
       :visible="ModalTramites"
+      fullscreen="lg"
       @close="
         () => {
           ModalTramites = false
@@ -114,8 +115,7 @@
     </CModal>
   </div>
 </template>
-<style scoped>
-@import '../assets/css/app.css';
+<style>
 .modal-dialog {
   margin: 1.75rem auto;
   max-width: 70% !important;

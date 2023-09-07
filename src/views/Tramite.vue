@@ -147,9 +147,6 @@
   </div>
 </template>
 <style>
-@import '../assets/css/bootstrap.min.css';
-@import '../assets/css/app.css';
-
 .padding-small {
   padding: 10px;
 }

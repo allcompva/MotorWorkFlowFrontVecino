@@ -33,7 +33,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
-// Import Main styles for this application
-@import 'styles/style';
+<style lang="css">
+@import url('assets/css/bootstrap.min.css');
+@import url('assets/css/app.css');
 </style>

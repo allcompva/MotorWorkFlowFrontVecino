@@ -252,6 +252,21 @@
                     </option>
                   </select>
                 </div>
+                <div v-if="itemColF.id_tipo_campo == 16">
+                  <button
+                    @click="btnValidar(itemColF.id_formulario, itemColF.text)"
+                    class="btn shadow-md me-2"
+                    style="
+                      float: right;
+                      margin-top: 20px;
+                      background-color: #198754;
+                      color: #fff;
+                    "
+                  >
+                    <i class="pi pi-check"></i
+                    ><span>&nbsp;&nbsp;Validar Datos</span>
+                  </button>
+                </div>
               </CCol>
             </CRow>
           </CCardText>
@@ -301,10 +316,10 @@
                   {{ itemCol.objAdjunto.descripcion }}
                 </div>
                 <CButton
-                  @click="clearPdf()"
+                  @click="clearPdf(i + ic)"
                   style="right: 0; position: absolute; box-shadow: none"
                 >
-                  <CIcon :icon="icon.cilX" size="xl" style="color: red" />
+                  <span class="fa fa-remove" style="color: red"></span>
                 </CButton>
               </CAlert>
               <CAlert
@@ -315,9 +330,8 @@
                   @click="clearImg(i + ic)"
                   style="right: 0; position: absolute; box-shadow: none"
                 >
-                  <CIcon
-                    :icon="icon.cilX"
-                    size="xl"
+                  <span
+                    class="fa fa-remove"
                     style="
                       border: solid;
                       border-radius: 50%;
@@ -325,7 +339,7 @@
                       background: red;
                       color: white;
                     "
-                  />
+                  ></span>
                 </CButton>
                 <img
                   :src="itemCol.objAdjunto.ingreso_usuario"
@@ -345,7 +359,7 @@
                 type="file"
                 :accept="itemCol.objAdjunto.extenciones_aceptadas"
                 :id="itemCol.objAdjunto.nombre"
-                @change="handleImage($event, i + ic)"
+                @change="handleImage($event, itemCol.id)"
               />
             </template>
           </template>
@@ -493,6 +507,104 @@
         >
       </CModalBody>
     </CModal>
+    <CModal
+      style="margin-top: 150px !important"
+      :visible="modalQuitarImage"
+      @close="
+        () => {
+          modalQuitarImage = false
+        }
+      "
+    >
+      <CModalBody style="text-align: center">
+        <i class="pi pi-times btn-delete"></i>
+        <h3>¿Esta seguro de quitar la imagen?</h3>
+        <p style="padding-left: 25%; padding-right: 25%"></p>
+        <CButton
+          style="background: white; color: #6c757d !important; margin-top: 25px"
+          color="secondary"
+          @click="
+            () => {
+              modalQuitarImage = false
+            }
+          "
+        >
+          Cancelar </CButton
+        >&nbsp;
+        <CButton
+          @click="clearPdfMultiple()"
+          color="primary"
+          style="
+            color: #fff !important;
+            background-color: rgb(173 16 41) !important;
+            border-color: rgb(173 16 41) !important;
+          "
+          >Aceptar</CButton
+        >
+      </CModalBody>
+    </CModal>
+
+    <CModal
+      style="margin-top: 100px !important; width: 60%"
+      :visible="modalValidaDatos"
+      @close="
+        () => {
+          modalValidaDatos = false
+        }
+      "
+    >
+      <CModalBody style="text-align: left; padding: 25px">
+        <h2
+          style="
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+          "
+        >
+          El bien solicitado ha sido encontrado en nuestra base de datos
+        </h2>
+        <hr />
+        <table style="width: 100%">
+          <thead>
+            <tr>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(value, key) in jsonData" :key="key">
+              <td v-if="key != 'lat' && key != 'lng'">{{ key + ': ' }}</td>
+              <td style="padding: 5px" v-if="key != 'lat' && key != 'lng'">
+                {{ value }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <iframe
+          :src="this.src"
+          width="100%"
+          height="300"
+          style="border: 0; margin-top: 20px"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+        <div style="width: 100%; text-align: center">
+          <CButton
+            style="background: white; color: #6c757d !important"
+            color="secondary"
+            @click="
+              () => {
+                modalValidaDatos = false
+              }
+            "
+          >
+            Aceptar
+          </CButton>
+        </div>
+      </CModalBody>
+    </CModal>
   </CForm>
 </template>
 <style>
@@ -536,11 +648,13 @@ body {
 import VueMultiselect from 'vue-multiselect'
 import { CIcon } from '@coreui/icons-vue'
 import * as icon from '@coreui/icons'
+import axios from 'axios'
 //import CombosEnlazados from '../components/CombosEnlazados.vue'
 //import { useStore } from 'vuex'
 export default {
   components: { VueMultiselect, CIcon },
   data: () => ({
+    modalValidaDatos: false,
     modalQuitarImage: false,
     images: [],
     visibleLiveDemo: false,
@@ -568,6 +682,10 @@ export default {
     base64StringsM: [],
     indice_imagen: 0,
     filasUnicas: [],
+    jsonData: {},
+    lat: '',
+    long: '',
+    src: '',
   }),
   mounted() {
     this.datosCompletos = this.formulario
@@ -579,7 +697,6 @@ export default {
         index === self.findIndex((f) => f.row === filas.row),
     )
     //const store = useStore()
-    // alert(store.cuit)
   },
   props: {
     formulario: {
@@ -603,10 +720,8 @@ export default {
       this.contenido_h = contenido.filter((city) => city.cod_enlaza == elejido)
       this.$store.commit('setOrigen_hijo', this.contenido_h)
     },
-    alert() {
-      alert('👋 Well, hi there! Thanks for dismissing me.')
-    },
-    handleImage(evt, index) {
+
+    handleImage(evt, _id) {
       const file = evt.target.files[0]
       const reader = new FileReader()
       reader.readAsDataURL(file)
@@ -615,6 +730,9 @@ export default {
         this.base64String = reader.result
         //.replace('data:', '')
         //.replace(/^.+,/, '')
+        const index = this.datosCompletos
+          .map((object) => object.id)
+          .indexOf(_id)
         this.datosCompletos[index].objAdjunto.descripcion = file.name
         this.datosCompletos[index].objAdjunto.ingreso_usuario =
           this.base64String
@@ -643,9 +761,9 @@ export default {
       this.error = false
       this.textoError = ''
     },
-    clearPdf() {
-      this.datosCompletos[0].objAdjunto.descripcion = ''
-      this.datosCompletos[0].objAdjunto.ingreso_usuario = ''
+    clearPdf(index) {
+      this.datosCompletos[index].objAdjunto.descripcion = ''
+      this.datosCompletos[index].objAdjunto.ingreso_usuario = ''
       this.base64String = ''
     },
     clearImg(index) {
@@ -740,6 +858,70 @@ export default {
     btnAnterior_clickHijo() {
       this.visibleLiveDemo = false
       this.$emit('tengo_resultados', this.pdestino, this.pdireccion)
+    },
+
+    btnValidar(idForm, url_ws) {
+      var parametros = ''
+      var control = false
+      if (this.datosCompletos != null) {
+        for (var i = 0; i < this.datosCompletos.length; i++) {
+          if (this.datosCompletos[i].id_formulario == idForm) {
+            for (
+              var e = 0;
+              e < this.datosCompletos[i].objFormulario.lstCampos.length;
+              e++
+            ) {
+              if (
+                this.datosCompletos[i].objFormulario.lstCampos[e].requerido == 1
+              ) {
+                if (
+                  !this.datosCompletos[i].objFormulario.lstCampos[e]
+                    .ingreso_usuario
+                ) {
+                  control = true
+                } else {
+                  if (parametros.length == 0) {
+                    parametros +=
+                      '?' +
+                      this.datosCompletos[i].objFormulario.lstCampos[e].nombre +
+                      '=' +
+                      this.datosCompletos[i].objFormulario.lstCampos[e]
+                        .ingreso_usuario
+                  } else {
+                    parametros +=
+                      '&' +
+                      this.datosCompletos[i].objFormulario.lstCampos[e].nombre +
+                      '=' +
+                      this.datosCompletos[i].objFormulario.lstCampos[e]
+                        .ingreso_usuario
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      if (control) {
+        alert('Para poder validar debe completar el formulario')
+      }
+      axios
+        .get(
+          'https://vecino.villaallende.gov.ar/WebApiShared' +
+            url_ws +
+            parametros,
+        )
+        .then((response) => {
+          ;(this.jsonData = response.data),
+            (this.modalValidaDatos = true),
+            (this.lat = response.data.lat),
+            (this.long = response.data.lng),
+            (this.src =
+              'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3409.4148476014557!2d' +
+              response.data.lat +
+              '!3d' +
+              response.data._long +
+              '!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94329d199d6f4df7%3A0x4149cec90e33152f!2sJ.%20J.%20de%20Urquiza%20243%2C%20X5105GCF%20Villa%20Allende%2C%20C%C3%B3rdoba!5e0!3m2!1ses!2sar!4v1694097158589!5m2!1ses!2sar')
+        })
     },
   },
 }

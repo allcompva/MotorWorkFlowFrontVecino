@@ -477,7 +477,7 @@
     </CModalBody>
   </CModal>
 </template>
-<style scoped>
+<style>
 .row {
   padding: 15px;
 }

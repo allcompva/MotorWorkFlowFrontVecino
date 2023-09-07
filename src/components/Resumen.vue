@@ -160,11 +160,18 @@
                       </p>
                     </div>
                     <div v-if="item.id_tipo_campo == 9">
+                      <p style="margin-top: 10px; margin-bottom: 10px">
+                        {{
+                          item.etiqueta[0].toUpperCase() +
+                          item.etiqueta.substring(1).toLowerCase()
+                        }}
+                      </p>
                       <p
                         v-for="seleccionado in item.ingreso_usuario"
                         :key="seleccionado.value"
+                        style="display: flex"
                       >
-                        <CIcon icon="cil-task" />&nbsp;
+                        <CIcon icon="cil-task" style="height: 25px" />&nbsp;
                         <strong>{{ seleccionado.text }}</strong>
                       </p>
                     </div>
@@ -334,7 +341,7 @@
     </CCard>
   </template>
 </template>
-<style scoped>
+<style>
 .v-select.v-select--chips:not(
     .v-text-field--single-line
   ).v-text-field--box.v-input--dense
